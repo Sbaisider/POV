@@ -1,0 +1,33 @@
+{
+  "cli": {
+    "version": ">= 15.0.10",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "API_URL": "https://dev.api.social-app.com",
+        "API_KEY": "dev-api-key"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "API_URL": "https://preview.api.social-app.com",
+        "API_KEY": "preview-api-key"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "API_URL": "https://api.social-app.com",
+        "API_KEY": "production-api-key"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

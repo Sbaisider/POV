@@ -1,0 +1,81 @@
+rootProject.name = 'socialapp'
+
+// Funzione per ottenere il percorso reale del modulo
+def getRealPath(String moduleName) {
+    try {
+        def process = ['node', '--print', "require.resolve('${moduleName}/package.json')"].execute(null, rootDir)
+        process.waitFor()
+        def path = process.in.text.trim()
+        if (path == null || path.isEmpty()) {
+            throw new GradleException("Could not resolve path for module: ${moduleName}")
+        }
+        return new File(path).parentFile
+    } catch (Exception e) {
+        throw new GradleException("Error resolving path for module: ${moduleName}", e)
+    }
+}
+
+// Funzione per applicare uno script se esiste
+def applyScript(File scriptPath, String scriptName) {
+    if (scriptPath == null) {
+        throw new GradleException("Script path cannot be null for: " + scriptName)
+    }
+    def fullPath = new File(scriptPath, scriptName)
+    if (fullPath.exists()) {
+        apply from: fullPath
+    } else {
+        throw new GradleException("${scriptName} script not found: " + fullPath)
+    }
+}
+
+// Percorso specifico per autolinking di expo
+def autolinkingPath = new File("C:/Users/omars/OneDrive/Desktop/POV/frontend/node_modules/expo/scripts/autolinking.gradle")
+if (autolinkingPath.exists()) {
+    apply from: autolinkingPath
+    useExpoModules()
+} else {
+    throw new GradleException("autolinking.gradle script not found: " + autolinkingPath)
+}
+
+// Gestione del percorso per react-native-community/cli-platform-android
+def reactNativeCommunityCliPath = new File("C:/Users/omars/OneDrive/Desktop/POV/frontend/node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
+if (reactNativeCommunityCliPath.exists()) {
+    apply from: reactNativeCommunityCliPath
+    applyNativeModulesSettingsGradle(settings)
+} else {
+    throw new GradleException("native_modules.gradle script not found: " + reactNativeCommunityCliPath)
+}
+
+include ':app'
+include ':module1'
+include ':module2'
+
+// Gestione del percorso per react-native-gradle-plugin
+def reactNativeGradlePluginPath
+try {
+    reactNativeGradlePluginPath = getRealPath('react-native-gradle-plugin')
+} catch (Exception e) {
+    throw new GradleException("React Native Gradle Plugin path not found or could not be resolved", e)
+}
+
+if (reactNativeGradlePluginPath.exists()) {
+    includeBuild(reactNativeGradlePluginPath)
+} else {
+    throw new GradleException("React Native Gradle Plugin path not found: " + reactNativeGradlePluginPath)
+}
+
+// Configurazione per la nuova architettura
+if (settings.hasProperty("newArchEnabled") && settings.newArchEnabled == "true") {
+    include(":ReactAndroid")
+    def reactNativePath = getRealPath('react-native')
+    if (reactNativePath.exists()) {
+        project(":ReactAndroid").projectDir = new File(reactNativePath, "../ReactAndroid")
+        include(":ReactAndroid:hermes-engine")
+        project(":ReactAndroid:hermes-engine").projectDir = new File(reactNativePath, "../ReactAndroid/hermes-engine")
+    } else {
+        throw new GradleException("React Native path not found: " + reactNativePath)
+    }
+}
+
+project(':module1').projectDir = new File(rootDir, 'module1')
+project(':module2').projectDir = new File(rootDir, 'module2')
